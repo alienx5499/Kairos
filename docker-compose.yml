@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kairos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kairos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kairos_secure_password_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-kairos_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kairos_user} -d ${POSTGRES_DB:-kairos_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kairos-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kairos-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-kairos_user}:${POSTGRES_PASSWORD:-kairos_secure_password_2026}@postgres:5432/${POSTGRES_DB:-kairos_db}
+      APP_NAME: "Kairos SRE Incident Engine"
+      ENVIRONMENT: production
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - kairos-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kairos-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - kairos-net
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: kairos-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - kairos-net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  kairos-net:
+    driver: bridge
