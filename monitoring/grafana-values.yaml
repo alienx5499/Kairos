@@ -1,0 +1,279 @@
+adminPassword: "kairos_admin_password_2026"
+
+persistence:
+  enabled: false
+
+service:
+  type: ClusterIP
+  port: 80
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus
+        url: http://prometheus-server.kairos.svc.cluster.local:80
+        access: proxy
+        isDefault: true
+        jsonData:
+          timeInterval: 5s
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: 'kairos'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/kairos
+
+# same as grafana-dashboard.json, provisioned on install
+dashboards:
+  kairos:
+    kairos-sre:
+      json: |
+        {
+          "annotations": {
+            "list": []
+          },
+          "editable": true,
+          "fiscalYearStartMonth": 0,
+          "graphTooltip": 0,
+          "id": null,
+          "links": [],
+          "liveNow": true,
+          "panels": [
+            {
+              "collapsed": false,
+              "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+              },
+              "id": 100,
+              "title": "Incident & SLA Metrics",
+              "type": "row"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "mappings": [],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 1
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 0,
+                "y": 1
+              },
+              "id": 1,
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "pluginVersion": "10.0.0",
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  },
+                  "editorMode": "code",
+                  "expr": "sum(kairos_active_incidents{severity=\"P1_CRITICAL\"}) or vector(0)",
+                  "legendFormat": "P1 Critical Outages",
+                  "range": true,
+                  "refId": "A"
+                }
+              ],
+              "title": "Active P1 Outages",
+              "type": "stat"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "blue",
+                        "value": null
+                      }
+                    ]
+                  }
+                }
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 6,
+                "x": 6,
+                "y": 1
+              },
+              "id": 2,
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  },
+                  "expr": "sum(kairos_incidents_total) or vector(0)",
+                  "legendFormat": "Total Declared",
+                  "refId": "A"
+                }
+              ],
+              "title": "Total Incidents Handled",
+              "type": "stat"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "reqps"
+                }
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 12,
+                "x": 12,
+                "y": 1
+              },
+              "id": 3,
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  },
+                  "expr": "sum(rate(kairos_http_requests_total[1m])) by (status_code)",
+                  "legendFormat": "Status {{status_code}}",
+                  "refId": "A"
+                }
+              ],
+              "title": "HTTP Request Throughput (req/sec)",
+              "type": "timeseries"
+            },
+            {
+              "collapsed": false,
+              "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 7
+              },
+              "id": 200,
+              "title": "System Latency & Performance",
+              "type": "row"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s"
+                }
+              },
+              "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 8
+              },
+              "id": 4,
+              "targets": [
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  },
+                  "expr": "histogram_quantile(0.95, sum(rate(kairos_http_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+                  "legendFormat": "p95 Latency [{{endpoint}}]",
+                  "refId": "A"
+                },
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "prometheus"
+                  },
+                  "expr": "histogram_quantile(0.50, sum(rate(kairos_http_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+                  "legendFormat": "p50 Latency [{{endpoint}}]",
+                  "refId": "B"
+                }
+              ],
+              "title": "API Request Latency Quantiles (p95 & p50)",
+              "type": "timeseries"
+            }
+          ],
+          "schemaVersion": 38,
+          "style": "dark",
+          "tags": [
+            "kairos",
+            "sre",
+            "incidents"
+          ],
+          "time": {
+            "from": "now-30m",
+            "to": "now"
+          },
+          "title": "Kairos SRE Incident Engine",
+          "uid": "kairos-sre-dashboard",
+          "version": 1
+        }

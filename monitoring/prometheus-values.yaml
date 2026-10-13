@@ -1,0 +1,26 @@
+# prometheus-community/prometheus chart, scrapes kairos-backend:8000
+server:
+  global:
+    scrape_interval: 10s
+    scrape_timeout: 8s
+  persistentVolume:
+    enabled: false
+
+extraScrapeConfigs: |
+  - job_name: 'kairos-backend'
+    metrics_path: '/metrics'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - kairos
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: kairos-backend
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: "8000"
+
+alertmanager:
+  enabled: false

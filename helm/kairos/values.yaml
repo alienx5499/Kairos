@@ -1,0 +1,98 @@
+global:
+  environment: production
+  namespace: kairos
+
+backend:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/prabalpatra/kairos-backend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  probes:
+    liveness:
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 15
+    readiness:
+      path: /ready
+      initialDelaySeconds: 10
+      periodSeconds: 10
+  env:
+    APP_NAME: "Kairos SRE Incident Engine"
+    ENVIRONMENT: "production"
+    PORT: "8000"
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/prabalpatra/kairos-frontend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  probes:
+    liveness:
+      path: /
+      initialDelaySeconds: 5
+      periodSeconds: 15
+    readiness:
+      path: /
+      initialDelaySeconds: 5
+      periodSeconds: 10
+
+postgresql:
+  enabled: true
+  image: postgres:16-alpine
+  host: "postgres-service"
+  port: 5432
+  database: "kairos_db"
+  username: "kairos_user"
+  password: "kairos_secure_password_2026"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: kairos.internal
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+        - path: /api
+          pathType: Prefix
+          service: backend
+        - path: /health
+          pathType: Prefix
+          service: backend
+        - path: /metrics
+          pathType: Prefix
+          service: backend
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 80

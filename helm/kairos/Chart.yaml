@@ -1,0 +1,9 @@
+apiVersion: v2
+name: kairos
+description: A Helm chart for Kairos SRE Incident Response Engine
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+maintainers:
+  - name: Prabal Patra
+    email: prabal@kairos.sre
