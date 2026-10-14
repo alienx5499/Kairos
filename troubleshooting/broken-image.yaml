@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kairos-broken-image
+  namespace: kairos
+  labels:
+    app: kairos-broken-image
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kairos-broken-image
+  template:
+    metadata:
+      labels:
+        app: kairos-broken-image
+    spec:
+      containers:
+        - name: backend
+          # unpushed tag, triggers imagepullbackoff
+          image: ghcr.io/prabalpatra/kairos-backend:v999.0.0-nonexistent
+          ports:
+            - containerPort: 8000
