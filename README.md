@@ -171,10 +171,21 @@ terraform init
 terraform plan
 ```
 
+<img width="3024" height="502" alt="Terraform Plan Output" src="https://github.com/user-attachments/assets/5b6db54a-a951-4cf3-964e-5f61c43391b9" />
+
 5. Apply:
 ```bash
 terraform apply
 ```
+
+<img width="3024" height="1508" alt="Terraform Apply Output" src="https://github.com/user-attachments/assets/c37efe9a-5935-4b52-a7dd-c67dbff722f8" />
+
+6. Clean up resources:
+```bash
+terraform destroy
+```
+
+<img width="3024" height="398" alt="Terraform Destroy Output" src="https://github.com/user-attachments/assets/7d9077c3-aa8c-49f2-abb2-57d747a5d62f" />
 
 The configuration defines an AWS VPC across two Availability Zones (public and private subnets, Internet Gateway, NAT Gateway) and an EKS cluster with managed node groups.
 

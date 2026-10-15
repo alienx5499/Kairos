@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region for Kairos infrastructure"
   type        = string
-  default     = "us-east-1"
+  default     = "ap-southeast-2"
 }
 
 variable "environment" {
@@ -37,7 +37,7 @@ variable "private_subnets" {
 variable "node_group_desired_size" {
   description = "Desired number of worker nodes"
   type        = number
-  default     = 3
+  default     = 2
 }
 
 variable "node_group_min_size" {
@@ -49,11 +49,17 @@ variable "node_group_min_size" {
 variable "node_group_max_size" {
   description = "Maximum number of worker nodes"
   type        = number
-  default     = 6
+  default     = 3
 }
 
 variable "node_instance_types" {
   description = "EC2 instance types for EKS worker nodes"
   type        = list(string)
-  default     = ["t3.medium"]
+  default     = ["t3.small"]
+}
+
+variable "availability_zones" {
+  description = "Availability zones for subnets"
+  type        = list(string)
+  default     = ["ap-southeast-2a", "ap-southeast-2b"]
 }
