@@ -1,6 +1,6 @@
 # Kairos: Incident Response and Outage Management
 
-Kairos is an incident tracking web application built for the SST DevOps Capstone Project. It lets teams log outages, set severity levels (P1–P4), update statuses, view real-time metrics, and document root causes.
+Kairos is an incident tracking web application built for the SST DevOps Capstone Project. It lets teams log outages, set severity levels (P1 to P4), update statuses, view real-time metrics, and document root causes.
 
 ## Architecture overview
 
@@ -14,45 +14,63 @@ The application is built with a React frontend, a FastAPI backend, and a Postgre
 kairos/
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml                   # CI/CD and Trivy security scanning
+│       └── ci-cd.yml                   # Test, build, Trivy scan, GHCR push, Helm deploy
 ├── backend/
-│   ├── alembic/                        # Database migrations
+│   ├── alembic/
+│   │   └── versions/
+│   │       └── 0001_initial_incidents.py  # Initial incidents table migration
 │   ├── app/
-│   │   ├── domain/                     # Incident models and enums
-│   │   ├── application/                # Business logic and repository interfaces
-│   │   ├── infrastructure/             # Database models, connection pool, and metrics
-│   │   ├── interfaces/                 # API routes, schemas, and health endpoints
-│   │   └── main.py                     # FastAPI application entrypoint
+│   │   ├── domain/                     # Incident entity, severity and status enums
+│   │   ├── application/                # Use cases and repository interface
+│   │   ├── infrastructure/             # SQLAlchemy models, repository, metrics
+│   │   ├── interfaces/                 # API routes, schemas, health and /metrics
+│   │   ├── config.py                   # Settings from environment variables
+│   │   └── main.py                     # FastAPI entrypoint and metrics middleware
 │   ├── tests/
-│   │   └── test_incidents.py           # Backend pytest suite
-│   ├── Dockerfile                      # Multi-stage Python build
-│   └── requirements.txt
+│   │   └── test_incidents.py           # Pytest suite on in-memory SQLite
+│   ├── alembic.ini
+│   ├── pytest.ini
+│   ├── requirements.txt
+│   └── Dockerfile                      # Multi-stage Python build, non-root user
 ├── frontend/
 │   ├── src/
-│   │   ├── components/                 # React UI components
-│   │   ├── App.jsx                     # Dashboard view
+│   │   ├── components/                 # IncidentList, IncidentModal, Desk
+│   │   ├── App.jsx                     # Dashboard layout and polling
+│   │   ├── api.js                      # Backend API client
+│   │   ├── incident.js                 # Severity, status and time helpers
 │   │   └── index.css                   # Styles
-│   ├── nginx.conf                      # Nginx reverse proxy configuration
-│   └── Dockerfile                      # Multi-stage Node and Nginx build
+│   ├── nginx.conf                      # Serves the build and proxies /api
+│   └── Dockerfile                      # Multi-stage Node build and Nginx runtime
 ├── helm/
-│   └── kairos/                         # Helm chart templates and values
+│   └── kairos/
+│       ├── templates/                  # Deployments, services, ingress, HPA, postgres
+│       ├── values.yaml                 # Default values
+│       ├── values-dev.yaml             # Development overrides
+│       └── values-prod.yaml            # Production overrides
 ├── k8s/
-│   └── namespace.yaml                  # Kubernetes namespace manifest
+│   ├── namespace.yaml                  # Kubernetes namespace
+│   ├── deployment.yaml                 # Standalone deployment manifest
+│   └── service.yaml                    # Standalone service manifest
 ├── monitoring/
+│   ├── prometheus-values.yaml          # Prometheus Helm values and scrape job
+│   ├── grafana-values.yaml             # Grafana Helm values with datasource and dashboard
 │   ├── grafana-dashboard.json          # Grafana dashboard definition
-│   ├── grafana-values.yaml             # Grafana Helm values
-│   └── prometheus-values.yaml          # Prometheus scraping configuration
+│   └── prometheus.yml                  # Prometheus config for Docker Compose
 ├── terraform/
-│   ├── vpc.tf                          # AWS VPC and networking resources
-│   ├── eks.tf                          # AWS EKS cluster and node group
-│   ├── main.tf                         # Terraform AWS provider configuration
-│   ├── variables.tf                    # Terraform variables
-│   └── outputs.tf                      # Terraform outputs
+│   ├── main.tf                         # AWS provider configuration
+│   ├── vpc.tf                          # VPC, subnets, gateways and routes
+│   ├── eks.tf                          # EKS cluster and node group
+│   ├── variables.tf                    # Input variables
+│   ├── outputs.tf                      # Cluster and network outputs
+│   └── terraform.tfvars.example        # Example variables, no credentials
 ├── troubleshooting/
 │   ├── RCA.md                          # Root cause analysis guide
 │   ├── broken-image.yaml               # ImagePullBackOff test manifest
 │   └── broken-service.yaml             # Service selector mismatch test manifest
-└── docker-compose.yml                  # Local Docker Compose setup
+├── docker-compose.yml                  # Local stack: frontend, backend, postgres, prometheus
+├── Kairos_Demo.mp4                     # Narrated project walkthrough
+├── Kairos_Presentation.pptx            # Final presentation slides
+└── README.md
 ```
 
 ## Running backend tests
@@ -79,7 +97,13 @@ Commit history for the repository:
 git log --format='%h | %ad | %s' --date=short
 ```
 
-<img width="3024" height="676" alt="image" src="https://github.com/user-attachments/assets/080fe117-3a0f-475b-960a-69f77d9aa81a" />
+<img width="3024" height="676" alt="Git log" src="https://github.com/user-attachments/assets/080fe117-3a0f-475b-960a-69f77d9aa81a" />
+
+Repository and commit history on GitHub:
+
+<img width="1512" height="792" alt="GitHub repository" src="https://github.com/user-attachments/assets/c3b2c986-ec22-428a-80ef-63c4dbd26d52" />
+
+<img width="1512" height="827" alt="GitHub commit history" src="https://github.com/user-attachments/assets/d4e6384c-89f3-4ce7-b8bd-2d727ab1bead" />
 
 ## Running locally with Docker Compose
 
@@ -119,7 +143,7 @@ docker compose logs backend
 6. Open the application:
 - Frontend: http://localhost:3000
 
-<img width="1512" height="827" alt="Frontend UI" src="https://github.com/user-attachments/assets/c9c82610-ba9a-4b84-9a33-86b9198258ef" />
+<img width="1512" height="950" alt="Frontend UI" src="https://github.com/user-attachments/assets/4ad02a32-42d0-420b-a18e-fea006ea6bc0" />
 
 - Swagger API docs: http://localhost:8000/docs
 
@@ -141,10 +165,23 @@ The workflow file in `.github/workflows/ci-cd.yml` runs on pushes to `main` and 
 2. Builds Docker images for the frontend and backend.
 3. Scans images for vulnerabilities using Trivy.
 4. Pushes images to GitHub Container Registry (GHCR) tagged with the commit SHA (`ghcr.io/<owner>/kairos-backend:<sha>`).
+5. Deploys the new images to EKS with `helm upgrade --install`.
+
+A successful pipeline run:
+
+<img width="1512" height="462" alt="Successful GitHub Actions pipeline run" src="https://github.com/user-attachments/assets/1734701f-153d-4c14-b678-d1c53cfb461c" />
+
+Images published to GHCR, tagged with the commit SHA:
+
+<img width="946" height="316" alt="GHCR packages" src="https://github.com/user-attachments/assets/522d35ce-5a02-474d-a3f3-15a8f3762de5" />
+
+<img width="1511" height="789" alt="GHCR image versions tagged with commit SHA" src="https://github.com/user-attachments/assets/e8279ca6-9e3d-4a91-8d60-aee2c4cf6f96" />
 
 ## Security and vulnerability scanning (DevSecOps)
 
 The pipeline uses Trivy to scan backend and frontend container images for known vulnerabilities (CVEs). Unfixed upstream vulnerabilities are ignored (`--ignore-unfixed`), and the build fails if actionable HIGH or CRITICAL CVEs are detected.
+
+<img width="1512" height="826" alt="Trivy scan report for the backend image" src="https://github.com/user-attachments/assets/f208abad-2021-49e1-b74d-dd178dc40547" />
 
 ## Provisioning AWS infrastructure with Terraform
 
@@ -188,6 +225,16 @@ terraform destroy
 <img width="3024" height="398" alt="Terraform Destroy Output" src="https://github.com/user-attachments/assets/7d9077c3-aa8c-49f2-abb2-57d747a5d62f" />
 
 The configuration defines an AWS VPC across two Availability Zones (public and private subnets, Internet Gateway, NAT Gateway) and an EKS cluster with managed node groups.
+
+Provisioned resources in the AWS Console (ap-southeast-2):
+
+<img width="1512" height="801" alt="AWS VPC resource map" src="https://github.com/user-attachments/assets/f0d85718-1641-47ef-91f3-0b654b2ee7ee" />
+
+<img width="1512" height="731" alt="AWS VPC subnets" src="https://github.com/user-attachments/assets/69f3a3f0-edfb-4a7d-947f-44b3b72bbf35" />
+
+<img width="1512" height="681" alt="AWS EKS cluster" src="https://github.com/user-attachments/assets/7bf888e4-91a6-4d34-8b26-b2ea1d49fbde" />
+
+<img width="1512" height="782" alt="AWS EKS node group" src="https://github.com/user-attachments/assets/3c96593a-a84d-46eb-bee0-9bf77d7ea99f" />
 
 ## Kubernetes deployment with Helm
 
@@ -249,6 +296,14 @@ helm list -A
 
 <img width="1512" height="141" alt="Helm releases" src="https://github.com/user-attachments/assets/34e59c32-13c1-4a55-b603-2829dd4ebe9c" />
 
+Each push to `main` deploys a new revision through the pipeline and rolls the pods:
+```bash
+helm history kairos -n kairos
+kubectl get pods -n kairos
+```
+
+<img width="1512" height="313" alt="Helm revision rolled out by the pipeline" src="https://github.com/user-attachments/assets/8c5d04ef-2076-45d2-a0f1-68bb3263f6e0" />
+
 10. Open the application through the Ingress. The Ingress routes `/` to the frontend and `/api`, `/health`, `/metrics` to the backend for host `kairos.internal`, so map that host to the load balancer IP first:
 ```bash
 dig +short $(kubectl get ingress kairos-ingress -n kairos -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
@@ -281,6 +336,13 @@ curl -s http://kairos.internal/metrics | grep -E '^kairos_' | head -20
 
 <img width="1512" height="419" alt="Prometheus metrics on EKS through the Ingress" src="https://github.com/user-attachments/assets/0b5cd806-059c-4fdc-9587-cd45550d199a" />
 
+The incident gauges are read from Postgres on every scrape, so they always match the database:
+```bash
+curl -s http://kairos.internal/metrics | grep -E '^kairos_(incidents_total|active_incidents)'
+```
+
+<img width="1512" height="138" alt="Incident gauges from the database" src="https://github.com/user-attachments/assets/3e0e6064-e634-42dd-ac5e-b14cee334b1a" />
+
 Helm configuration values for Prometheus and Grafana are in `monitoring/prometheus-values.yaml` and `monitoring/grafana-values.yaml`. The Grafana dashboard in `monitoring/grafana-dashboard.json` displays request throughput, latencies, and active incidents.
 
 1. Install Prometheus and Grafana in the cluster:
@@ -302,6 +364,15 @@ kubectl port-forward -n monitoring svc/prometheus-server 9091:80
 
 <img width="1510" height="487" alt="Prometheus targets with kairos-backend up" src="https://github.com/user-attachments/assets/ea11eac6-430e-4d15-8435-8fd967ab4286" />
 
+3. Open the Grafana dashboard (login `admin` with the `adminPassword` from `monitoring/grafana-values.yaml`):
+```bash
+kubectl port-forward -n monitoring svc/grafana 3001:80
+```
+
+- Dashboard: http://localhost:3001/d/kairos-sre-dashboard
+
+<img width="1512" height="828" alt="Grafana dashboard with live incident, throughput and latency panels" src="https://github.com/user-attachments/assets/c9cc4cdb-cb2b-4ae2-bbe9-c103276e840e" />
+
 
 ## Troubleshooting scenarios
 
@@ -309,3 +380,10 @@ The `troubleshooting/` directory contains two Kubernetes failure scenarios and a
 - `broken-image.yaml`: reproduces an `ImagePullBackOff` error from an invalid image tag
 - `broken-service.yaml`: reproduces a service with empty endpoints caused by a selector mismatch
 - `RCA.md`: diagnosis steps, log outputs, root cause analysis, and fixes
+
+## Final presentation
+
+The slide deck covers what Kairos is, why it was built, the tech stack, the pipeline, and the alternatives considered, with proof screenshots of the CI/CD run, the repository, Docker Compose, and the EKS deployment.
+
+- Slides: [Kairos_Presentation.pptx](https://github.com/alienx5499/Kairos/blob/main/Kairos_Presentation.pptx)
+- Demo video: [Kairos_Demo.mp4](https://github.com/alienx5499/Kairos/blob/main/Kairos_Demo.mp4)
