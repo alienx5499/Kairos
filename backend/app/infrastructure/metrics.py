@@ -12,10 +12,10 @@ HTTP_REQUEST_DURATION_SECONDS = Histogram(
     ["method", "endpoint"]
 )
 
-INCIDENTS_TOTAL = Counter(
+# incident gauges mirror the database, set on every scrape
+INCIDENTS_TOTAL = Gauge(
     "kairos_incidents_total",
-    "Total incidents reported in Kairos",
-    ["severity", "service_name"]
+    "Total incidents on record in Kairos"
 )
 
 ACTIVE_INCIDENTS_GAUGE = Gauge(
@@ -23,6 +23,12 @@ ACTIVE_INCIDENTS_GAUGE = Gauge(
     "Current active (unresolved) incidents",
     ["severity"]
 )
+
+
+def record_incident_state(total: int, active_by_severity: dict[str, int]) -> None:
+    INCIDENTS_TOTAL.set(total)
+    for severity, count in active_by_severity.items():
+        ACTIVE_INCIDENTS_GAUGE.labels(severity=severity).set(count)
 
 
 def get_metrics_payload() -> tuple[bytes, str]:

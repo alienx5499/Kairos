@@ -92,3 +92,12 @@ class GetIncidentStatsUseCase:
 
     def execute(self) -> Dict[str, int]:
         return self.repo.get_stats()
+
+
+class GetActiveIncidentsBySeverityUseCase:
+    def __init__(self, repo: IncidentRepositoryProtocol):
+        self.repo = repo
+
+    def execute(self) -> Dict[str, int]:
+        counts = self.repo.count_active_by_severity()
+        return {sev.value: counts.get(sev.value, 0) for sev in Severity}

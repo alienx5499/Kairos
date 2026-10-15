@@ -64,7 +64,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(kairos_active_incidents{severity=\"P1_CRITICAL\"}) or vector(0)",
+          "expr": "max(kairos_active_incidents{job=\"kairos-backend\",severity=\"P1_CRITICAL\"}) or vector(0)",
           "legendFormat": "P1 Critical Outages",
           "range": true,
           "refId": "A"
@@ -104,7 +104,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(kairos_incidents_total) or vector(0)",
+          "expr": "max(kairos_incidents_total{job=\"kairos-backend\"}) or vector(0)",
           "legendFormat": "Total Declared",
           "refId": "A"
         }
@@ -133,7 +133,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(kairos_http_requests_total[1m])) by (status_code)",
+          "expr": "sum(rate(kairos_http_requests_total{job=\"kairos-backend\"}[1m])) by (status_code)",
           "legendFormat": "Status {{status_code}}",
           "refId": "A"
         }
@@ -174,13 +174,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(kairos_http_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+          "expr": "histogram_quantile(0.95, sum(rate(kairos_http_request_duration_seconds_bucket{job=\"kairos-backend\"}[5m])) by (le, endpoint))",
           "legendFormat": "p95 Latency [{{endpoint}}]",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(kairos_http_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+          "expr": "histogram_quantile(0.50, sum(rate(kairos_http_request_duration_seconds_bucket{job=\"kairos-backend\"}[5m])) by (le, endpoint))",
           "legendFormat": "p50 Latency [{{endpoint}}]",
           "refId": "B"
         }

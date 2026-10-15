@@ -88,6 +88,17 @@ def test_metrics_endpoint(client):
     assert "kairos_http_requests_total" in response.text
 
 
+def test_metrics_reflect_database(client):
+    base = {"service_name": "api-gateway", "summary": "upstream pods failing", "responder": "oncall", "severity": "P1_CRITICAL"}
+    client.post("/api/v1/incidents", json={**base, "title": "Ingress 502"})
+    resolved = client.post("/api/v1/incidents", json={**base, "title": "Ingress 504"}).json()
+    client.put(f"/api/v1/incidents/{resolved['id']}", json={"status": "RESOLVED"})
+
+    text = client.get("/metrics").text
+    assert "kairos_incidents_total 2.0" in text
+    assert 'kairos_active_incidents{severity="P1_CRITICAL"} 1.0' in text
+
+
 def test_create_incident(client):
     payload = {
         "title": "Auth token cache desync",

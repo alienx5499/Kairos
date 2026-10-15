@@ -118,3 +118,12 @@ class SqlAlchemyIncidentRepository(IncidentRepositoryProtocol):
             "resolved": int(row.resolved or 0),
             "p1_active": int(row.p1_active or 0)
         }
+
+    def count_active_by_severity(self) -> Dict[str, int]:
+        rows = (
+            self.db.query(IncidentModel.severity, func.count(IncidentModel.id))
+            .filter(IncidentModel.status != IncidentStatus.RESOLVED.value)
+            .group_by(IncidentModel.severity)
+            .all()
+        )
+        return {severity: count for severity, count in rows}

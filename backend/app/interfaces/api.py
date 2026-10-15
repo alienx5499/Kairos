@@ -13,7 +13,6 @@ from ..application.use_cases import (
 )
 from ..domain.value_objects import Severity, IncidentStatus
 from .schemas import IncidentCreate, IncidentUpdate, IncidentResponse, IncidentStatsResponse
-from ..infrastructure.metrics import INCIDENTS_TOTAL, ACTIVE_INCIDENTS_GAUGE
 
 router = APIRouter(prefix="/api/v1/incidents", tags=["Incidents"])
 
@@ -35,8 +34,6 @@ def create_incident(
         summary=payload.summary,
         responder=payload.responder
     )
-    INCIDENTS_TOTAL.labels(severity=incident.severity.value, service_name=incident.service_name).inc()
-    ACTIVE_INCIDENTS_GAUGE.labels(severity=incident.severity.value).inc()
     return incident
 
 

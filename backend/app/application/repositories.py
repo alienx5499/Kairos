@@ -28,3 +28,6 @@ class IncidentRepositoryProtocol(Protocol):
 
     def get_stats(self) -> Dict[str, int]:
         ...
+
+    def count_active_by_severity(self) -> Dict[str, int]:
+        ...

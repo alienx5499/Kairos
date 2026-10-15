@@ -220,6 +220,45 @@ helm upgrade --install kairos helm/kairos -f helm/kairos/values-dev.yaml -n kair
 helm upgrade --install kairos helm/kairos -f helm/kairos/values-prod.yaml -n kairos
 ```
 
+6. Install the ingress-nginx controller (provisions an AWS load balancer for the Ingress):
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --version 4.15.1 \
+  -n ingress-nginx --create-namespace --set controller.service.type=LoadBalancer
+```
+
+7. Check the nodes and pods on EKS:
+```bash
+kubectl get nodes
+kubectl get pods -n kairos -o wide
+```
+
+<img width="1512" height="269" alt="kubectl get nodes and pods on EKS" src="https://github.com/user-attachments/assets/f1e7a045-f2a6-4d9c-975d-91ebc8f32a1b" />
+
+8. Check the services and the Ingress address:
+```bash
+kubectl get svc,ingress -n kairos
+```
+
+<img width="1512" height="177" alt="kubectl get svc and ingress" src="https://github.com/user-attachments/assets/fd924142-cccd-4b39-bdb5-bd1514616317" />
+
+9. List the Helm releases:
+```bash
+helm list -A
+```
+
+<img width="1512" height="141" alt="Helm releases" src="https://github.com/user-attachments/assets/34e59c32-13c1-4a55-b603-2829dd4ebe9c" />
+
+10. Open the application through the Ingress. The Ingress routes `/` to the frontend and `/api`, `/health`, `/metrics` to the backend for host `kairos.internal`, so map that host to the load balancer IP first:
+```bash
+dig +short $(kubectl get ingress kairos-ingress -n kairos -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+echo "<load-balancer-ip> kairos.internal" | sudo tee -a /etc/hosts
+```
+
+- Application: http://kairos.internal
+
+<img width="1512" height="952" alt="Application through the Ingress" src="https://github.com/user-attachments/assets/b1cbe241-2a9e-4874-a251-bbbf958ffd4a" />
+
 ## Observability and monitoring
 
 The backend exposes Prometheus metrics on `/metrics`:
@@ -234,7 +273,35 @@ curl -s http://localhost:8000/metrics | grep -E '^# HELP (kairos_|http_requests)
 
 <img width="1512" height="221" alt="Prometheus metrics output" src="https://github.com/user-attachments/assets/76c8fdb5-4ae1-465a-88a4-98a5b01b07bf" />
 
+The same endpoint on EKS, through the Ingress:
+
+```bash
+curl -s http://kairos.internal/metrics | grep -E '^kairos_' | head -20
+```
+
+<img width="1512" height="419" alt="Prometheus metrics on EKS through the Ingress" src="https://github.com/user-attachments/assets/0b5cd806-059c-4fdc-9587-cd45550d199a" />
+
 Helm configuration values for Prometheus and Grafana are in `monitoring/prometheus-values.yaml` and `monitoring/grafana-values.yaml`. The Grafana dashboard in `monitoring/grafana-dashboard.json` displays request throughput, latencies, and active incidents.
+
+1. Install Prometheus and Grafana in the cluster:
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm upgrade --install prometheus prometheus-community/prometheus --version 29.37.0 \
+  -n monitoring --create-namespace -f monitoring/prometheus-values.yaml
+helm upgrade --install grafana grafana/grafana --version 10.5.15 \
+  -n monitoring -f monitoring/grafana-values.yaml
+```
+
+2. Open the Prometheus targets page:
+```bash
+kubectl port-forward -n monitoring svc/prometheus-server 9091:80
+```
+
+- Targets: http://localhost:9091/targets
+
+<img width="1510" height="487" alt="Prometheus targets with kairos-backend up" src="https://github.com/user-attachments/assets/ea11eac6-430e-4d15-8435-8fd967ab4286" />
+
 
 ## Troubleshooting scenarios
 
